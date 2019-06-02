@@ -43,34 +43,35 @@ module.exports = class Monit {
   }
 
   async main () {
-    setTimeout(await this.checkAvailability, 60000);
+    setTimeout(async () => await this.checkAvailability(this), 1000);
   }
 
-  async checkAvailability () {
+  async checkAvailability (that) {
     const runningContainers = await docker.listContainers();
+    that.servicesNames = [];
     for (const container of runningContainers) {
-      const name = container.Names[1];
+      const name = container.Names[0];
       const firstSplit = name.split(`/`);
-      const splitedName = firstSplit.split(`_`);
+      const splitedName = firstSplit[1].split(`_`);
       splitedName.pop();
       const serviceName = splitedName.join(`_`);
-      this.servicesNames.push(serviceName);
+      that.servicesNames.push(serviceName);
       if (container.State === `running`) {
-        await this.serviceUp(serviceName);
+        await that.serviceUp(serviceName);
       } else {
-        await this.serviceDown(serviceName);
+        await that.serviceDown(serviceName);
       }
     }
 
-    for (const aRunningService of this.servicesNames) {
-      const service = _.find(this.composeServicesNames, aRunningService);
-      if (service) {
-        this.serviceUp(service);
+    for (const aRunningService of that.composeServicesNames) {
+      const service = _.indexOf(that.servicesNames, aRunningService);
+      if (service !== -1) {
+        that.serviceUp(aRunningService);
       } else {
-        this.serviceDown(service);
+        that.serviceDown(aRunningService);
       }
     }
-    setTimeout(await this.checkAvailability, 60000);
+    setTimeout(async () => await that.checkAvailability(that), 5000);
   }
 
   async serviceDown (serviceName) {

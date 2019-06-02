@@ -34,17 +34,15 @@ module.exports = class Slack {
 
   async notifyUp (serviceName) {
     if (this.hasSlack && this.isNotifiedDown(serviceName)) {
-      if (_.find(this.notifiedDown, serviceName)) {
-        await this.slack.send({
-          ...this.slackOptions,
-          text: `Hurray, ${serviceName} is up on ${process.env.SERVER_NAME || `default server`} !`,
-        });
-        _.remove(this.notifiedDown, serviceName);
-      }
+      await this.slack.send({
+        ...this.slackOptions,
+        text: `Hurray, ${serviceName} is up on ${process.env.SERVER_NAME || `default server`} !`,
+      });
+      _.remove(this.notifiedDown, service => service === serviceName);
     }
   }
 
   isNotifiedDown (serviceName) {
-    return Boolean(_.find(this.notifiedDown, serviceName));
+    return _.indexOf(this.notifiedDown, serviceName) !== -1;
   }
 }
